@@ -1,6 +1,3 @@
-# separate repo (sdui-flutter-engine), checked out as a sibling dir
-flutter-engine/
-monorepo-history.bundle
 .codex/
 node_modules/
 dist/

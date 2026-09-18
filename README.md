@@ -7,7 +7,7 @@ spec in `spec/`.
 
 | Package | Language | Use from another project |
 |---|---|---|
-| `flutter-engine/` | — | separate repo: [sdui-flutter-engine](https://github.com/David-Lee-dev/sdui-flutter-engine) — checked out here as a sibling dir |
+| (engine) | — | separate repo: [sdui-flutter-engine](https://github.com/David-Lee-dev/sdui-flutter-engine), checked out as `../92_sdui-flutter-engine` |
 | `js-cplr/` | TypeScript/JS (`sdui-template-compiler`) | `pnpm add <path>` → library import or `sdui-compile` CLI |
 | `py-cplr/` | Python (`sdui-template-compiler`) | `pip install <path>` → `sdui_template_compiler` or `sdui-compile` |
 | `go-cplr/` | Go (`github.com/sdui-starter/template-compiler`) | `go get`/replace → library or `go run ./cmd/sdui-compile` |
