@@ -2,11 +2,11 @@ package sduicompiler
 
 import (
 	"sort"
-	"strconv"
+	"strings"
 )
 
 type semanticVersion struct {
-	major, minor, patch int
+	major, minor, patch string
 	source              string
 }
 
@@ -48,18 +48,25 @@ func parseSemver(version string) semanticVersion {
 	if match == nil {
 		fail("Invalid semantic version: %s", version)
 	}
-	major, _ := strconv.Atoi(match[1])
-	minor, _ := strconv.Atoi(match[2])
-	patch, _ := strconv.Atoi(match[3])
-	return semanticVersion{major: major, minor: minor, patch: patch, source: version}
+	return semanticVersion{major: match[1], minor: match[2], patch: match[3], source: version}
+}
+
+// compareComponent compares two version components as digit strings. The
+// regex forbids leading zeros, so length-then-lexicographic equals numeric
+// order at arbitrary precision — machine ints would overflow silently.
+func compareComponent(left, right string) int {
+	if len(left) != len(right) {
+		return len(left) - len(right)
+	}
+	return strings.Compare(left, right)
 }
 
 func compareSemverParsed(left, right semanticVersion) int {
-	if d := left.major - right.major; d != 0 {
+	if d := compareComponent(left.major, right.major); d != 0 {
 		return d
 	}
-	if d := left.minor - right.minor; d != 0 {
+	if d := compareComponent(left.minor, right.minor); d != 0 {
 		return d
 	}
-	return left.patch - right.patch
+	return compareComponent(left.patch, right.patch)
 }

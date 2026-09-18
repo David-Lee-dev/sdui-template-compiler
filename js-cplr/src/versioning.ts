@@ -1,9 +1,10 @@
 import type { ScreenModule, ScreenVersionAssets } from './screen-manifest.js';
 
 interface SemanticVersion {
-  major: number;
-  minor: number;
-  patch: number;
+  /** Digit strings, not numbers — components compare at arbitrary precision. */
+  major: string;
+  minor: string;
+  patch: string;
   source: string;
 }
 
@@ -53,11 +54,23 @@ export class Versioning {
     }
 
     return {
-      major: Number(match[1]),
-      minor: Number(match[2]),
-      patch: Number(match[3]),
+      major: match[1],
+      minor: match[2],
+      patch: match[3],
       source: version,
     };
+  }
+
+  /**
+   * Numeric comparison of two version components as digit strings.
+   *
+   * The regex forbids leading zeros, so length-then-lexicographic equals
+   * numeric order at arbitrary precision — `Number()` would lose exactness
+   * beyond 2^53.
+   */
+  private static compareComponent(left: string, right: string): number {
+    if (left.length !== right.length) return left.length - right.length;
+    return left < right ? -1 : left > right ? 1 : 0;
   }
 
   private static compare(
@@ -65,9 +78,9 @@ export class Versioning {
     right: SemanticVersion,
   ): number {
     return (
-      left.major - right.major ||
-      left.minor - right.minor ||
-      left.patch - right.patch
+      Versioning.compareComponent(left.major, right.major) ||
+      Versioning.compareComponent(left.minor, right.minor) ||
+      Versioning.compareComponent(left.patch, right.patch)
     );
   }
 }

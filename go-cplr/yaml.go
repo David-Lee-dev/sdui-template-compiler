@@ -8,6 +8,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// maxSafeInteger is JS Number.MAX_SAFE_INTEGER (2^53 - 1).
+const maxSafeInteger = int64(1)<<53 - 1
+
 // Yaml loads YAML files as JSON-compatible ordered values.
 type Yaml struct{}
 
@@ -72,6 +75,11 @@ func yamlScalar(node *yaml.Node, path string) Value {
 	case "!!int":
 		var i int64
 		if err := node.Decode(&i); err == nil {
+			// Beyond 2^53 JS holds the value as a lossy double — mirror it
+			// so serialized bytes match the reference.
+			if i > maxSafeInteger || i < -maxSafeInteger {
+				return float64(i)
+			}
 			return i
 		}
 		var f float64

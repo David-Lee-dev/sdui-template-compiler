@@ -52,6 +52,27 @@ class TestGolden:
                 assert stringify(composed.template) == expected
                 assert composed.etag == manifest[id]["etags"][template_version]
 
+        # The CLI manifest must be byte-identical too: discovery order,
+        # pretty serialization, and etags all locked across ports.
+        built: dict = {}
+        for id in registry.ids():
+            module = registry.module_of(id)
+            assert module is not None, f"Unknown screen: {id}"
+            etags: dict[str, str] = {}
+            for assets in module.versions.values():
+                if assets.template in etags:
+                    continue
+                etags[assets.template] = _resolve_template_version(
+                    registry, id, assets.template
+                ).etag
+            built[id] = {
+                "versions": {v: {"template": a.template} for v, a in module.versions.items()},
+                "params": list(module.params),
+                "etags": etags,
+            }
+        with open(os.path.join(expected_dir, "manifest.json"), "r", encoding="utf-8") as f:
+            assert stringify(built, indent=2) == f.read()
+
 
 class TestVersioning:
     @pytest.mark.parametrize(

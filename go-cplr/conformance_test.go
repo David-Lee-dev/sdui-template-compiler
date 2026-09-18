@@ -112,6 +112,44 @@ func TestConformanceGolden(t *testing.T) {
 					}
 				}
 			}
+
+			// The CLI manifest must be byte-identical too: discovery order,
+			// pretty serialization, and etags all locked across ports.
+			built := NewObject()
+			for _, id := range registry.IDs() {
+				module := registry.ModuleOf(id)
+				if module == nil {
+					t.Fatalf("Unknown screen: %s", id)
+				}
+				etags := NewObject()
+				written := map[string]struct{}{}
+				for _, entry := range module.Versions {
+					templateVersion := entry.Assets.Template
+					if _, done := written[templateVersion]; done {
+						continue
+					}
+					written[templateVersion] = struct{}{}
+					etags.Set(templateVersion, resolveTemplateVersion(t, registry, id, templateVersion).Etag)
+				}
+				versions := NewObject()
+				for _, entry := range module.Versions {
+					assets := NewObject()
+					assets.Set("template", entry.Assets.Template)
+					versions.Set(entry.Version, assets)
+				}
+				params := make([]Value, 0, len(module.Params))
+				for _, param := range module.Params {
+					params = append(params, param)
+				}
+				screenManifest := NewObject()
+				screenManifest.Set("versions", versions)
+				screenManifest.Set("params", params)
+				screenManifest.Set("etags", etags)
+				built.Set(id, screenManifest)
+			}
+			if got := PrettyJSON(built); got != string(manifestBytes) {
+				t.Errorf("manifest mismatch:\n got: %s\nwant: %s", got, manifestBytes)
+			}
 		})
 	}
 }

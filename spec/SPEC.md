@@ -2,7 +2,8 @@
 
 Every compiler port (TS, Python, Go) implements exactly this. The conformance
 vectors in `cases.yaml` + `fixtures/` are the executable form of this document —
-a port is correct when that suite is green.
+the drift guard every port must keep green. The suite exercises the contract
+through representative vectors; this document is what a port implements.
 
 ## Input: an SDUI root directory
 
@@ -25,7 +26,18 @@ versions:                       # app-version threshold -> asset versions
 params: [id]                    # optional: route query keys forwarded as root data
 ```
 
-Versions are strict `major.minor.patch` (regex `^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$`).
+Threshold keys — and the client app versions matched against them — are
+strict `major.minor.patch` (regex `^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$`).
+Components compare **numerically at arbitrary precision** (no leading zeros,
+so digit-string length-then-lexicographic order is exact). Template asset
+versions are opaque non-empty strings, used verbatim as the `template/<v>/`
+directory and `<v>.json` output names. Screen ids and template versions must
+not be **purely numeric** (`^[0-9]+$`) — JS objects reorder integer-index keys,
+which would break cross-port manifest key order.
+
+Screens are discovered from `screens/*/screen.yaml` in **Unicode code-point
+order of the directory name** (equals UTF-8 byte order) — registry id order
+and manifest key order follow it.
 
 ## Build keys (compile-time only; none survive into output)
 
@@ -63,7 +75,9 @@ threshold → the oldest; malformed versions throw `Invalid semantic version: <v
 Per screen, per distinct template version:
 - Composed JSON with all build keys resolved, **key order preserved from the
   YAML source**, serialized compact (`JSON.stringify` semantics: UTF-8, no added
-  whitespace, integral numbers without a trailing `.0`).
+  whitespace, numbers per ECMAScript `Number::toString` — integral values
+  without a trailing `.0`, exponent notation only for `|x| >= 1e21` or
+  `|x| < 1e-6`, bare exponent digits: `1e-7`, never `1e-07`).
 - `etag` = first 16 hex chars of sha256 over that compact serialization.
 
 CLI (`sdui-compile <root> --out <dir> [--pretty]`) writes
@@ -75,6 +89,9 @@ CLI (`sdui-compile <root> --out <dir> [--pretty]`) writes
 YAML 1.2 core schema as implemented by js-yaml v4: only `true`/`false` are
 booleans (`on`/`off`/`yes`/`no` are strings), `1.0.0` stays a string, non-finite
 numbers and non-plain objects are rejected (`YAML is not JSON-compatible: <path>`).
+Integers beyond ±(2^53 − 1) are held as lossy doubles, exactly as JS holds
+every number — `9007199254740993` composes and serializes as
+`9007199254740992`.
 
 ## Error messages
 

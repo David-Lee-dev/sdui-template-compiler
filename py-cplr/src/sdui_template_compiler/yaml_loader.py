@@ -9,6 +9,9 @@ import yaml as pyyaml
 JsonValue = Any
 
 
+_MAX_SAFE_INTEGER = 2**53 - 1  # JS Number.MAX_SAFE_INTEGER
+
+
 class _CoreSchemaLoader(pyyaml.SafeLoader):
     """SafeLoader with YAML 1.2 core-schema implicit resolvers.
 
@@ -88,13 +91,19 @@ class Yaml:
         if value is None or isinstance(value, (bool, str)):
             return value
         if isinstance(value, int):
-            return value
+            # Beyond 2^53 JS holds the value as a lossy double (`1e21` prints
+            # as "1e+21", not full digits) — mirror it to keep bytes identical.
+            return value if abs(value) <= _MAX_SAFE_INTEGER else float(value)
         if isinstance(value, float):
             if not math.isfinite(value):
                 raise ValueError(f"YAML is not JSON-compatible: {path}")
             # JS numbers have no int/float split: an integral float must
             # serialize without a trailing `.0` to match JSON.stringify.
-            return int(value) if value.is_integer() else value
+            # Only exact conversions qualify — above 2^53 stay float so the
+            # serializer applies JS exponent notation.
+            if value.is_integer() and abs(value) <= _MAX_SAFE_INTEGER:
+                return int(value)
+            return value
         if isinstance(value, list):
             return [Yaml._assert_json_value(item, path) for item in value]
         if isinstance(value, dict):

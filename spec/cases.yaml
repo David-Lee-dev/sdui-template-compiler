@@ -15,6 +15,8 @@
 golden:
   - basic
   - composition
+  - numbers
+  - ordering # non-BMP directory names: code-point order, not UTF-16 order
 
 versioning:
   fixture: versioning
@@ -25,7 +27,9 @@ versioning:
     - { app_version: '1.0.0', template: '1.0.0' }
     - { app_version: '1.7.2', template: '1.0.0' } # threshold 1.5.0 maps to template 1.0.0
     - { app_version: '2.0.0', template: '2.0.0' }
-    - { app_version: '9.9.9', template: '2.0.0' } # above every threshold -> newest
+    - { app_version: '9.9.9', template: '2.0.0' } # above 2.0.0, below the giant threshold
+    - { app_version: '9007199254740992.0.0', template: '2.0.0' } # < giant threshold only at exact precision
+    - { app_version: '9007199254740993.0.0', template: '3.0.0' } # exact-precision match -> newest
   invalid_app_versions: ['abc', '1.0', '01.0.0']
 
 errors:
@@ -37,3 +41,5 @@ errors:
   missing-ref: 'Unresolved .ref'
   token-sibling: 'must not have sibling keys'
   build-key: 'Unsupported build key'
+  numeric-id: 'Screen id must not be purely numeric'
+  numeric-template: 'Template version must not be purely numeric'

@@ -37,7 +37,26 @@ export interface ScreenModule {
   params: readonly string[];
 }
 
+/** Compares two strings by Unicode code point (equals UTF-8 byte order). */
+function compareCodePoints(left: string, right: string): number {
+  const a = [...left];
+  const b = [...right];
+  const length = Math.min(a.length, b.length);
+  for (let i = 0; i < length; i += 1) {
+    const d = (a[i].codePointAt(0) ?? 0) - (b[i].codePointAt(0) ?? 0);
+    if (d !== 0) return d;
+  }
+  return a.length - b.length;
+}
+
 const SEMANTIC_VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+
+/**
+ * JS objects reorder integer-index keys ("2" before "10" regardless of
+ * insertion), so purely numeric ids/versions would serialize in different
+ * manifest orders across ports. Rejected at load time instead.
+ */
+const PURELY_NUMERIC = /^\d+$/;
 const MANIFEST_FILE = 'screen.yaml';
 
 export class ScreenManifest {
@@ -45,7 +64,7 @@ export class ScreenManifest {
    * Discovers every screen manifest under `<rootDir>/screens`.
    *
    * @param rootDir - SDUI root containing the `screens` directory
-   * @returns Validated screen modules in directory order
+   * @returns Validated screen modules in lexicographic directory-name order
    * @throws When a manifest is invalid or two screens declare the same id
    */
   static discover(rootDir: string): ScreenModule[] {
@@ -56,7 +75,14 @@ export class ScreenManifest {
 
     const modules: ScreenModule[] = [];
     const seen = new Set<string>();
-    for (const entry of readdirSync(screensDir, { withFileTypes: true })) {
+    // Unicode code-point order — filesystem enumeration order is not
+    // portable, and manifest key order must match across ports. Plain `<`
+    // compares UTF-16 code units, which disagrees with Python/Go beyond the
+    // BMP, so compare code points explicitly.
+    const entries = readdirSync(screensDir, { withFileTypes: true }).sort(
+      (a, b) => compareCodePoints(a.name, b.name),
+    );
+    for (const entry of entries) {
       if (!entry.isDirectory()) continue;
       const manifestPath = join(screensDir, entry.name, MANIFEST_FILE);
       if (!existsSync(manifestPath)) continue;
@@ -92,6 +118,9 @@ export class ScreenManifest {
     if (typeof id !== 'string' || id.trim().length === 0) {
       throw new Error(`Screen manifest must declare an id: ${manifestPath}`);
     }
+    if (PURELY_NUMERIC.test(id)) {
+      throw new Error(`Screen id must not be purely numeric: ${id}`);
+    }
 
     const versionsRaw = raw['versions'];
     if (!ScreenManifest.isObject(versionsRaw)) {
@@ -114,6 +143,11 @@ export class ScreenManifest {
       if (typeof template !== 'string' || template.length === 0) {
         throw new Error(
           `Screen <${id}> version ${version} must declare a template`,
+        );
+      }
+      if (PURELY_NUMERIC.test(template)) {
+        throw new Error(
+          `Template version must not be purely numeric: ${template}`,
         );
       }
       versions[version] = { template };

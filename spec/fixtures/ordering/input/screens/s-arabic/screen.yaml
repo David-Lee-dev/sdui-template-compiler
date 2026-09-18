@@ -1,0 +1,4 @@
+# Arabic-Indic digits are not ASCII digits — accepted, not 'purely numeric'.
+id: '١٢٣'
+versions:
+  '1.0.0': { template: '1.0.0' }

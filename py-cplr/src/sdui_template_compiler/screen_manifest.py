@@ -8,6 +8,10 @@ from typing import Mapping, Sequence
 from .yaml_loader import Yaml
 
 _SEMANTIC_VERSION = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
+# JS objects reorder integer-index keys ("2" before "10" regardless of
+# insertion), so purely numeric ids/versions would serialize in different
+# manifest orders across ports. Rejected at load time instead.
+_PURELY_NUMERIC = re.compile(r"[0-9]+")
 _MANIFEST_FILE = "screen.yaml"
 
 
@@ -38,7 +42,7 @@ class ScreenManifest:
         """Discovers every screen manifest under `<rootDir>/screens`.
 
         @param root_dir - SDUI root containing the `screens` directory
-        @returns Validated screen modules in directory order
+        @returns Validated screen modules in lexicographic directory-name order
         @throws When a manifest is invalid or two screens declare the same id
         """
         screens_dir = os.path.join(root_dir, "screens")
@@ -47,7 +51,9 @@ class ScreenManifest:
 
         modules: list[ScreenModule] = []
         seen: set[str] = set()
-        for entry in os.scandir(screens_dir):
+        # Lexicographic directory order — filesystem enumeration order is not
+        # portable, and manifest key order must match across ports.
+        for entry in sorted(os.scandir(screens_dir), key=lambda e: e.name):
             if not entry.is_dir():
                 continue
             manifest_path = os.path.join(screens_dir, entry.name, _MANIFEST_FILE)
@@ -77,6 +83,8 @@ class ScreenManifest:
         id = raw.get("id")
         if not isinstance(id, str) or len(id.strip()) == 0:
             raise ValueError(f"Screen manifest must declare an id: {manifest_path}")
+        if _PURELY_NUMERIC.fullmatch(id) is not None:
+            raise ValueError(f"Screen id must not be purely numeric: {id}")
 
         versions_raw = raw.get("versions")
         if not isinstance(versions_raw, dict):
@@ -93,6 +101,8 @@ class ScreenManifest:
             template = assets.get("template")
             if not isinstance(template, str) or len(template) == 0:
                 raise ValueError(f"Screen <{id}> version {version} must declare a template")
+            if _PURELY_NUMERIC.fullmatch(template) is not None:
+                raise ValueError(f"Template version must not be purely numeric: {template}")
             versions[version] = ScreenVersionAssets(template=template)
 
         params_raw = raw.get("params")

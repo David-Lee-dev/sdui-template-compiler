@@ -53,6 +53,31 @@ describe('conformance', () => {
             expect(composed.etag).toBe(manifest[id].etags[templateVersion]);
           }
         }
+
+        // The CLI manifest must be byte-identical too: discovery order,
+        // pretty serialization, and etags all locked across ports.
+        const built: Record<string, unknown> = {};
+        for (const id of registry.ids()) {
+          const module = registry.moduleOf(id);
+          if (module === undefined) throw new Error(`Unknown screen: ${id}`);
+          const etags: Record<string, string> = {};
+          for (const assets of Object.values(module.versions)) {
+            if (etags[assets.template] !== undefined) continue;
+            etags[assets.template] = resolveTemplateVersion(
+              registry,
+              id,
+              assets.template,
+            ).etag;
+          }
+          built[id] = {
+            versions: module.versions,
+            params: module.params,
+            etags,
+          };
+        }
+        expect(JSON.stringify(built, null, 2)).toBe(
+          readFileSync(join(expectedDir, 'manifest.json'), 'utf8'),
+        );
       });
     }
   });

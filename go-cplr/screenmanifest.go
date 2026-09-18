@@ -41,10 +41,16 @@ func (m *ScreenModule) VersionAssets(version string) (ScreenVersionAssets, bool)
 
 var semanticVersionPattern = regexp.MustCompile(`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$`)
 
+// JS objects reorder integer-index keys ("2" before "10" regardless of
+// insertion), so purely numeric ids/versions would serialize in different
+// manifest orders across ports. Rejected at load time instead.
+var purelyNumericPattern = regexp.MustCompile(`^\d+$`)
+
 const manifestFile = "screen.yaml"
 
 // ScreenManifestDiscover discovers every screen manifest under
-// `<rootDir>/screens`, in directory order. Aborts when a manifest is invalid
+// `<rootDir>/screens`, in lexicographic directory-name order (os.ReadDir
+// sorts). Aborts when a manifest is invalid
 // or two screens declare the same id.
 func ScreenManifestDiscover(rootDir string) []*ScreenModule {
 	screensDir := filepath.Join(rootDir, "screens")
@@ -87,6 +93,9 @@ func ScreenManifestLoad(manifestPath, dir string) *ScreenModule {
 	if !ok || strings.TrimSpace(id) == "" {
 		fail("Screen manifest must declare an id: %s", manifestPath)
 	}
+	if purelyNumericPattern.MatchString(id) {
+		fail("Screen id must not be purely numeric: %s", id)
+	}
 
 	rawVersions, _ := raw.Get("versions")
 	versionsMap, ok := rawVersions.(*Object)
@@ -111,6 +120,9 @@ func ScreenManifestLoad(manifestPath, dir string) *ScreenModule {
 		template, ok := rawTemplate.(string)
 		if !ok || template == "" {
 			fail("Screen <%s> version %s must declare a template", id, version)
+		}
+		if purelyNumericPattern.MatchString(template) {
+			fail("Template version must not be purely numeric: %s", template)
 		}
 		versions = append(versions, VersionEntry{Version: version, Assets: ScreenVersionAssets{Template: template}})
 	}

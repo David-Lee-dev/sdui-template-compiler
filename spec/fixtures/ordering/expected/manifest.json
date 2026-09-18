@@ -1,0 +1,35 @@
+{
+  "١٢٣": {
+    "versions": {
+      "1.0.0": {
+        "template": "1.0.0"
+      }
+    },
+    "params": [],
+    "etags": {
+      "1.0.0": "55440b72dc32d0cf"
+    }
+  },
+  "pua": {
+    "versions": {
+      "1.0.0": {
+        "template": "1.0.0"
+      }
+    },
+    "params": [],
+    "etags": {
+      "1.0.0": "7a643fd9f8e9d5a9"
+    }
+  },
+  "astral": {
+    "versions": {
+      "1.0.0": {
+        "template": "1.0.0"
+      }
+    },
+    "params": [],
+    "etags": {
+      "1.0.0": "dd1f271c0b99a9bf"
+    }
+  }
+}

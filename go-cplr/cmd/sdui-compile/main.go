@@ -16,7 +16,7 @@ import (
 	"os"
 	"path/filepath"
 
-	sduicompiler "github.com/sdui-starter/template-compiler"
+	sduicompiler "github.com/David-Lee-dev/sdui-template-compiler/go-cplr"
 )
 
 type cliOptions struct {

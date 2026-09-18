@@ -1,0 +1,1 @@
+{"_type":"data","tiny":1e-7,"small":0.00001,"fraction":0.1,"plain":1.5,"precise":123.456,"negative":-2.5e-10,"huge":1e+21,"integral":100,"big_int":9007199254740991,"boundary_small":0.000001,"huge_no_exp":100000000000000000000,"unsafe_int":9007199254740992,"unsafe_neg":-9007199254740992}

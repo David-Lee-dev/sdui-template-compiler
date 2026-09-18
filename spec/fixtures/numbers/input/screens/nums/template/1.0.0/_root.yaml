@@ -1,0 +1,17 @@
+# Locks ECMAScript number serialization across ports: exponent notation
+# thresholds (no exponent for 1e-6 <= |x| < 1e21), bare exponent digits
+# ("1e-7", never "1e-07"), integral floats printed as integers.
+_type: data
+tiny: 0.0000001
+small: 0.00001
+fraction: 0.1
+plain: 1.5
+precise: 123.456
+negative: -2.5e-10
+huge: 1.0e21
+integral: 100
+big_int: 9007199254740991
+boundary_small: 0.000001
+huge_no_exp: 1.0e20
+unsafe_int: 9007199254740993
+unsafe_neg: -9007199254740993

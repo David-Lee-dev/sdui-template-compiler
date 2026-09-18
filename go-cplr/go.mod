@@ -1,4 +1,4 @@
-module github.com/sdui-starter/template-compiler
+module github.com/David-Lee-dev/sdui-template-compiler/go-cplr
 
 go 1.22
 

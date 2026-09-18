@@ -3,4 +3,7 @@ versions:
   '1.0.0': { template: '1.0.0' }
   '1.5.0': { template: '1.0.0' }
   '2.0.0': { template: '2.0.0' }
+  # Distinguishable from 9007199254740992 only with exact integer comparison —
+  # both round to the same IEEE-754 double.
+  '9007199254740993.0.0': { template: '3.0.0' }
 params: [tab]
