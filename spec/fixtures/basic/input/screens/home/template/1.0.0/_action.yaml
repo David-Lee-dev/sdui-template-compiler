@@ -1,8 +1,8 @@
 # Home root scope actions (`_scope._action` of `_root.yaml`). Trailing comment = caller.
 
 load_feed: # body mount — only while items is still null, so a re-mount does not refetch
-  _type: api
-  query: HomeFeed
+  _type: net
+  path: /feed
   _when: '${items == null}'
   _then:
     - { _type: set, items: '${data.items}' }

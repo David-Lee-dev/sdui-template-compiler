@@ -6,9 +6,8 @@ _scope:
     detail: null # filled by load_detail on mount
   _action:
     load_detail:
-      _type: api
-      query: ItemDetail
-      variables: { id: '${id}' }
+      _type: net
+      path: '/items/${id}'
       _when: '${detail == null}'
       _then:
         - { _type: set, detail: '${data.item}' }
