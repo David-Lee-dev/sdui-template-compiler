@@ -1,0 +1,6 @@
+# Component whose arg subtree re-uses another component (caller-context expansion).
+.vars: [child]
+.content:
+  _type: container
+  padding: 4
+  _child: .child

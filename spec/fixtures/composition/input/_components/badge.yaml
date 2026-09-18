@@ -1,0 +1,10 @@
+# Component with defaults, an omitted-slot body, and a token default.
+.vars: [label, color, icon]
+.defaults:
+  color: { .token: color.primary }
+.content:
+  _type: row
+  color: .color
+  _children:
+    - .icon
+    - { _type: text, value: .label }

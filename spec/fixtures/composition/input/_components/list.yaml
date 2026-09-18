@@ -1,0 +1,8 @@
+# Component splicing a list-valued arg into an array slot.
+.vars: [items]
+.content:
+  _type: column
+  _children:
+    - { _type: text, value: head }
+    - .items
+    - { _type: text, value: tail }

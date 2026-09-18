@@ -1,0 +1,12 @@
+# spacer — fixed empty gap of `size`. Vertical gap inside a column, horizontal inside a row.
+#
+# Note: distinct from the engine widget `_type: spacer` (which *fills* remaining flex
+# space). This component is a `size`-square empty box referenced as `.ref: /spacer`.
+#
+# Usage:
+#   { .ref: /spacer, size: 16 }
+.vars: [size]
+.content:
+  _type: sizedbox
+  width: .size
+  height: .size

@@ -1,0 +1,67 @@
+# Detail screen root — loads one item by the `id` route parameter.
+_type: scaffold
+background_color: { .token: color.background }
+_scope:
+  _state:
+    detail: null # filled by load_detail on mount
+  _action:
+    load_detail:
+      _type: api
+      query: ItemDetail
+      variables: { id: '${id}' }
+      _when: '${detail == null}'
+      _then:
+        - { _type: set, detail: '${data.item}' }
+    go_back:
+      _type: navigate
+      method: pop
+_slots:
+  app_bar:
+    _type: app_bar
+    _slots:
+      title:
+        _type: text
+        value: Detail
+        style: { font_size: 18, font_weight: w700, color: { .token: color.white } }
+  body:
+    _type: safe_area
+    _scope:
+      _lifecycle:
+        - { on: mount, action: load_detail }
+    _child:
+      _type: cond
+      _children:
+        - _if: '${detail == null}'
+          _type: center
+          _child: { _type: circular_progress_indicator, color: { .token: color.primary } }
+        - _else: true
+          _type: padding
+          padding: 16
+          _child:
+            _type: column
+            cross_axis_alignment: stretch
+            spacing: 16
+            _children:
+              - .ref: /card
+                padding: 24
+                border: { color: { .token: color.surface20 }, width: 1 }
+                child:
+                  _type: column
+                  cross_axis_alignment: center
+                  spacing: 12
+                  _children:
+                    - _type: text
+                      value: '${detail.emoji}'
+                      style: { font_size: 48 }
+                    - _type: text
+                      value: '${detail.title}'
+                      style: { font_size: 20, font_weight: w700, color: { .token: color.white } }
+                    - _type: text
+                      value: '${detail.description}'
+                      text_align: center
+                      style: { font_size: 14, color: { .token: color.surface70 } }
+              - { .ref: /spacer, size: 8 }
+              - _type: text
+                value: 'Item id: ${id}'
+                text_align: center
+                style: { font_size: 12, color: { .token: color.surface50 } }

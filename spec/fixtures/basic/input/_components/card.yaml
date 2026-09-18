@@ -1,0 +1,25 @@
+# card — rounded surface container.
+#
+# Knobs (all optional):
+#   padding          : inner padding            (omit -> none via default 12)
+#   child            : body [usually required]
+#   width / height   : fixed dimensions         (omit -> hug content)
+#   background_color : surface color            (omit -> surface10)
+#   border           : border map               (omit -> none)
+#
+# Usage:
+#   { .ref: /card, padding: 16, child: { _type: text, value: hello } }
+.vars: [padding, child, width, height, background_color, border]
+.defaults:
+  padding: 12
+  background_color: { .token: color.surface10 }
+.content:
+  _type: container
+  width: .width
+  height: .height
+  padding: .padding
+  decoration:
+    color: .background_color
+    border_radius: auto
+    border: .border
+  _child: .child

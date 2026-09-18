@@ -1,0 +1,26 @@
+{
+  "detail": {
+    "versions": {
+      "1.0.0": {
+        "template": "1.0.0"
+      }
+    },
+    "params": [
+      "id"
+    ],
+    "etags": {
+      "1.0.0": "d50c6ea6d6160aae"
+    }
+  },
+  "home": {
+    "versions": {
+      "1.0.0": {
+        "template": "1.0.0"
+      }
+    },
+    "params": [],
+    "etags": {
+      "1.0.0": "be22f863ad4e95e0"
+    }
+  }
+}

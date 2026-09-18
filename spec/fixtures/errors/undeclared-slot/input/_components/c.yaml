@@ -1,0 +1,2 @@
+.vars: [x]
+.content: { _type: text, value: .y }

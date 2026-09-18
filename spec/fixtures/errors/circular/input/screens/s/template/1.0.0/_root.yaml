@@ -1,0 +1,3 @@
+_type: column
+_children:
+  - { .ref: /a }

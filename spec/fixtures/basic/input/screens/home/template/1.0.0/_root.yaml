@@ -1,0 +1,82 @@
+# Home screen root — a data-driven feed demonstrating the core loop:
+# mount -> api -> set state -> reactive rebuild -> tap -> navigate.
+_type: scaffold
+background_color: { .token: color.background }
+_scope:
+  _state: { .ref: _state }
+  _action: { .ref: _action }
+_slots:
+  app_bar:
+    _type: app_bar
+    center_title: true
+    _slots:
+      title:
+        _type: text
+        value: SDUI Starter
+        style:
+          font_size: 18
+          font_weight: w700
+          color: { .token: color.primary }
+        _on: { tap: show_hello }
+  body:
+    _type: safe_area
+    _scope:
+      _lifecycle:
+        - { on: mount, action: load_feed }
+    _child:
+      _type: cond
+      _children:
+        - _if: '${items == null}'
+          _type: center
+          _child: { _type: circular_progress_indicator, color: { .token: color.primary } }
+        - _else: true
+          _type: single_child_scroll_view
+          padding: 16
+          _child:
+            _type: column
+            cross_axis_alignment: stretch
+            spacing: 12
+            _children:
+              - _type: text
+                value: 'Today''s picks'
+                style: { font_size: 16, font_weight: w600, color: { .token: color.white } }
+              - _type: column
+                cross_axis_alignment: stretch
+                spacing: 8
+                _children:
+                  # `_loop` lives on a widget node — component refs cannot carry it.
+                  - _loop:
+                      _in: '${items}'
+                      _as: item
+                      _key: '${item.id}'
+                    _type: container
+                    padding: [16, 14]
+                    decoration:
+                      color: { .token: color.surface10 }
+                      border_radius: 12
+                      border: { color: { .token: color.surface20 }, width: 1 }
+                    _on: { tap: { do: open_detail, event: '${item.id}' } }
+                    _child:
+                      _type: row
+                      spacing: 12
+                      cross_axis_alignment: center
+                      _children:
+                        - _type: text
+                          value: '${item.emoji}'
+                          style: { font_size: 24 }
+                        - _type: expanded
+                          _child:
+                            _type: column
+                            cross_axis_alignment: stretch
+                            spacing: 2
+                            _children:
+                              - _type: text
+                                value: '${item.title}'
+                                style: { font_size: 14, font_weight: w600, color: { .token: color.white } }
+                              - _type: text
+                                value: '${item.subtitle}'
+                                style: { font_size: 12, color: { .token: color.surface70 } }
+                        - _type: icon
+                          name: chevron_right
+                          size: 22
+                          color: { .token: color.surface50 }

@@ -1,0 +1,4 @@
+primary: '#112233'
+nested:
+  deep:
+    value: '#445566'

@@ -1,0 +1,17 @@
+# Starter palette (dark). Reference with `.token: color.<name>`.
+primary: '#5C9EFF'
+primary_sub: '#12233F'
+
+surface10: '#181818'
+surface20: '#212121'
+surface30: '#2C2C2C'
+surface50: '#4B4B4B'
+surface70: '#838383'
+surface90: '#D6D6D6'
+
+background: '#0E0E0E'
+black: '#121212'
+white: '#EDEDED'
+
+green: '#00D1B9'
+red: '#FF655D'

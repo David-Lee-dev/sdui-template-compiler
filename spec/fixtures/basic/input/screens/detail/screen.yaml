@@ -1,0 +1,7 @@
+# Detail screen — arrives with `id` as a route query parameter, which the
+# serving route forwards into the engine's root binding scope. `params`
+# declares that contract explicitly.
+id: detail
+versions:
+  '1.0.0': { template: '1.0.0' }
+params: [id]

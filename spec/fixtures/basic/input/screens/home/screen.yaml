@@ -1,0 +1,5 @@
+# Screen manifest — read by every compiler port (TS / Python / Go).
+# App versions at or above a threshold key receive that threshold's assets.
+id: home
+versions:
+  '1.0.0': { template: '1.0.0' }

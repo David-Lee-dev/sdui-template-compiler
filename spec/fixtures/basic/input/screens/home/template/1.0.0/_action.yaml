@@ -1,0 +1,16 @@
+# Home root scope actions (`_scope._action` of `_root.yaml`). Trailing comment = caller.
+
+load_feed: # body mount — only while items is still null, so a re-mount does not refetch
+  _type: api
+  query: HomeFeed
+  _when: '${items == null}'
+  _then:
+    - { _type: set, items: '${data.items}' }
+
+open_detail: # feed row tap — the row passes its loop item id as the event payload
+  _type: navigate
+  route: '/screens/detail?id=${event}'
+
+show_hello: # header tap — smallest possible driver demo
+  - { _type: sys_haptic, variant: light }
+  - { _type: toast, message: 'Hello from SDUI!' }

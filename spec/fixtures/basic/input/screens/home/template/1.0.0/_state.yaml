@@ -1,0 +1,3 @@
+# Home root scope state (`_scope._state` of `_root.yaml`).
+
+items: null # feed rows — filled by load_feed on mount; null renders the loading branch

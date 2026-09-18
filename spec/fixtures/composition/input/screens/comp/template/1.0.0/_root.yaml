@@ -1,0 +1,16 @@
+_type: column
+_children:
+  # defaults applied; icon slot omitted -> dropped from the row children
+  - { .ref: /badge, label: hello }
+  # explicit arg overrides the default
+  - { .ref: /badge, label: colored, color: '#FF0000', icon: { _type: icon, name: star } }
+  # component inside another component's arg subtree
+  - .ref: /nested/wrap
+    child: { .ref: /badge, label: inner }
+  # list-valued arg spliced in place
+  - .ref: /list
+    items:
+      - { _type: text, value: a }
+      - { _type: text, value: b }
+  # relative fragment ref with token traversal
+  - { .ref: _fragment }

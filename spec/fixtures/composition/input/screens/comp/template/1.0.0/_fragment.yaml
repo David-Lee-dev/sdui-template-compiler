@@ -1,0 +1,3 @@
+_type: text
+value: from-fragment
+deep: { .token: color.nested.deep.value }

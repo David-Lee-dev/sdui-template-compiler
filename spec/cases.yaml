@@ -1,0 +1,39 @@
+# Language-neutral conformance vectors. Every compiler port (TS / Python / Go)
+# runs these against the fixtures in `fixtures/` — this file is the drift guard.
+#
+# golden   : compile `<fixture>/input` and compare byte-identical JSON against
+#            `<fixture>/expected/screens/<id>/<templateVersion>.json`
+#            (compact JSON, UTF-8, key order preserved from the YAML source).
+#            Etags in `expected/manifest.json` must match as well — they hash
+#            JSON.stringify-compatible compact serialization with sha256,
+#            truncated to 16 hex chars.
+# versioning: build the fixture, then check `resolve(screen, app_version)`
+#            selects the expected template version.
+# errors   : building the fixture must fail with a message containing the
+#            given substring.
+
+golden:
+  - basic
+  - composition
+
+versioning:
+  fixture: versioning
+  screen: multi
+  queries:
+    - { app_version: null, template: '1.0.0' } # no version -> oldest threshold
+    - { app_version: '0.9.0', template: '1.0.0' } # below every threshold -> oldest
+    - { app_version: '1.0.0', template: '1.0.0' }
+    - { app_version: '1.7.2', template: '1.0.0' } # threshold 1.5.0 maps to template 1.0.0
+    - { app_version: '2.0.0', template: '2.0.0' }
+    - { app_version: '9.9.9', template: '2.0.0' } # above every threshold -> newest
+  invalid_app_versions: ['abc', '1.0', '01.0.0']
+
+errors:
+  circular: 'Circular reference'
+  unknown-token: 'Unknown token group'
+  unknown-arg: 'unknown args'
+  undeclared-slot: 'undeclared slot'
+  fragment-args: 'does not accept args'
+  missing-ref: 'Unresolved .ref'
+  token-sibling: 'must not have sibling keys'
+  build-key: 'Unsupported build key'
