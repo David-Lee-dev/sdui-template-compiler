@@ -91,7 +91,17 @@ _children:
 | [`py-cplr/`](py-cplr) | Python ≥ 3.11 | `sdui_template_compiler` | `sdui-compile` |
 | [`go-cplr/`](go-cplr) | Go ≥ 1.22 | `github.com/David-Lee-dev/sdui-template-compiler/go-cplr` | `go run ./cmd/sdui-compile` |
 
-아직 패키지 레지스트리에 게시된 포트는 없다. 소스에서 설치해야 한다(경로 의존성, `pip install -e`, 또는 모듈 경로에 대한 Go `replace`/`go get`). 각 포트의 README에서 방법을 설명한다.
+아직 패키지 레지스트리에 게시된 포트는 없지만, 로컬 체크아웃이나 레지스트리 서버 없이 이 저장소에서 곧바로 일반 패키지처럼 설치할 수 있다.
+
+```sh
+# Python — pip이 git에서 직접 설치한다 (버전 고정은 ...git@<tag>#subdirectory=...)
+pip install "git+https://github.com/David-Lee-dev/sdui-template-compiler.git#subdirectory=py-cplr"
+
+# Go — 모듈 경로 그대로 go get
+go get github.com/David-Lee-dev/sdui-template-compiler/go-cplr
+```
+
+TypeScript 포트는 로컬 경로 또는 package.json의 git 의존성으로 설치한다. 개발용 editable 설치를 포함한 상세는 각 포트의 README를 본다.
 
 ## 적합성: "바이트 단위로 동일하다"의 의미
 

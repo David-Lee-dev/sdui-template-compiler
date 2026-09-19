@@ -12,6 +12,10 @@ Not yet published to PyPI — install from source.
 ## Install
 
 ```sh
+# straight from git — no checkout needed (pin with ...git@<tag>#subdirectory=py-cplr)
+pip install "git+https://github.com/David-Lee-dev/sdui-template-compiler.git#subdirectory=py-cplr"
+
+# or from a local checkout:
 pip install path/to/sdui-template-compiler/py-cplr
 # or editable, for development:
 pip install -e 'path/to/sdui-template-compiler/py-cplr[dev]'

@@ -115,9 +115,21 @@ client engine renders the JSON. Full authoring guide:
 | [`py-cplr/`](py-cplr) | Python ≥ 3.11 | `sdui_template_compiler` | `sdui-compile` |
 | [`go-cplr/`](go-cplr) | Go ≥ 1.22 | `github.com/David-Lee-dev/sdui-template-compiler/go-cplr` | `go run ./cmd/sdui-compile` |
 
-None of the ports is published to a package registry yet — install from
-source (path dependency, `pip install -e`, or a Go `replace`/`go get` on the
-module path). Each port README shows how.
+None of the ports is published to a package registry yet, but each installs
+straight from this repository like a normal package — no local checkout or
+registry server needed:
+
+```sh
+# Python — pip installs directly from git (pin with ...git@<tag>#subdirectory=...)
+pip install "git+https://github.com/David-Lee-dev/sdui-template-compiler.git#subdirectory=py-cplr"
+
+# Go — module path works with go get as usual
+go get github.com/David-Lee-dev/sdui-template-compiler/go-cplr
+```
+
+The TypeScript port installs from a local path or a git dependency in
+package.json. Each port README shows the details, including editable installs
+for development.
 
 ## Conformance: what "byte-identical" means
 
