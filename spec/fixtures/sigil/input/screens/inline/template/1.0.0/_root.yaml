@@ -1,0 +1,16 @@
+_type: column
+# whole-string sigil keeps the token's own type
+background_color: '@{color.primary}'
+gap: '@{spacing.lg}'
+ratio: '@{spacing.ratio}'
+dense: '@{spacing.dense}'
+nested: '@{color.nested.accent}'
+# interpolation yields a string, and composes inside a runtime expression
+label: 'pad:@{spacing.lg}'
+expression: '${is_urgent ? "@{color.primary}" : "@{color.text_secondary}"}'
+arithmetic: '${@{spacing.lg} * 2}'
+escaped: '@@{not.a.token}'
+# both forms coexist
+legacy: { .token: color.primary }
+_children:
+  - { .ref: /chip, label: '@{color.text_secondary}' }

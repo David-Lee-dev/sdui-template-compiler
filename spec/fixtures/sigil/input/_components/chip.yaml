@@ -1,0 +1,6 @@
+.vars: [label]
+.content:
+  _type: chip
+  label: .label
+  color: '@{color.primary}'
+  padding: '@{spacing.lg}'

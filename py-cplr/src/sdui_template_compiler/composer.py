@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 from typing import Any, Mapping, Sequence
 
 from .include_resolver import IncludeResolverFn
+from .json_compat import stringify
 from .token_resolver import TokenResolverFn
 from .validator import Validator
 
@@ -21,6 +22,11 @@ TOKEN_KEY = ".token"
 
 _MISSING = object()
 _GROUP_NAME = re.compile(r"^[A-Za-z0-9_-]+$")
+
+# `@{group.path}` — the inline form of `.token`, usable anywhere a string is.
+# `@@{` escapes a literal `@{`. Both are consumed at compile time, so the sigil
+# is invisible to the client and composes inside runtime `${...}` expressions.
+_TOKEN_SIGIL = re.compile(r"@@\{|@\{([^{}]*)\}")
 
 
 @dataclass(frozen=True)
@@ -132,6 +138,8 @@ class Composer:
     def _expand_node(node: JsonValue, context: _ExpansionContext) -> JsonValue:
         if isinstance(node, list):
             return Composer._expand_array(node, context)
+        if isinstance(node, str):
+            return Composer._expand_string(node, context)
         if not isinstance(node, dict):
             return node
 
@@ -158,6 +166,20 @@ class Composer:
         if not isinstance(token_path, str):
             raise ValueError(".token value must be a non-empty dotted string")
 
+        return Composer._resolve_token(token_path, context)
+
+    @staticmethod
+    def _resolve_token(token_path: str, context: _ExpansionContext) -> JsonValue:
+        """Resolves a dotted token path against its group file.
+
+        Shared by `{ .token: ... }` and the inline `@{...}` sigil so both forms
+        validate identically and fail with the same diagnostics.
+
+        @param token_path - Dotted path, `<group>.<key...>`
+        @param context - Expansion context carrying the token resolver
+        @returns Deep copy of the token value
+        @throws When the path is malformed, the group is unknown, or a key is missing
+        """
         segments = token_path.split(".")
         if (
             len(segments) < 2
@@ -182,7 +204,57 @@ class Composer:
             value = value[key]
             traversed_path = f"{traversed_path}.{key}"
 
+        # A token value that carries the sigil would be rescanned when it lands in
+        # a component argument subtree, making resolution depend on where it was
+        # used. Reject it at the source instead.
+        if isinstance(value, str) and "@{" in value:
+            raise ValueError(f"Token value must not contain @{{: {token_path}")
+
         return copy.deepcopy(value)
+
+    @staticmethod
+    def _expand_string(node: str, context: _ExpansionContext) -> JsonValue:
+        """Substitutes `@{group.path}` token sigils inside a string value.
+
+        A string that is exactly one sigil resolves to the token's own value and
+        keeps its type (`'@{spacing.lg}'` -> `16`). Any other occurrence is
+        interpolated as text, so tokens compose inside runtime expressions.
+
+        @param node - Raw string value from the template
+        @param context - Expansion context carrying the token resolver
+        @returns The token value, the interpolated string, or the string unchanged
+        @throws When a sigil is unterminated or interpolates a non-scalar token
+        """
+        if "@" not in node:
+            return node
+
+        whole = _TOKEN_SIGIL.fullmatch(node)
+        if whole is not None and whole.group(1) is not None:
+            return Composer._resolve_token(whole.group(1), context)
+
+        def substitute(match: re.Match[str]) -> str:
+            if match.group(1) is None:
+                return "@{"
+
+            value = Composer._resolve_token(match.group(1), context)
+            if isinstance(value, (dict, list)):
+                raise ValueError(
+                    f"Cannot interpolate non-scalar token {match.group(1)} into a string"
+                )
+            return value if isinstance(value, str) else stringify(value)
+
+        Composer._assert_no_dangling_sigil(node)
+        return _TOKEN_SIGIL.sub(substitute, node)
+
+    @staticmethod
+    def _assert_no_dangling_sigil(original: str) -> None:
+        """Rejects an unterminated `@{` left behind by substitution.
+
+        A typo like `@{color.primary` would otherwise ship to the client as
+        literal text; failing the build is the loud alternative.
+        """
+        if "@{" in _TOKEN_SIGIL.sub("", original):
+            raise ValueError(f"Unterminated token sigil @{{ in: {original}")
 
     @staticmethod
     def _expand_array(nodes: Sequence[JsonValue], context: _ExpansionContext) -> list[JsonValue]:

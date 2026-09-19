@@ -8,7 +8,7 @@
 
 템플릿 파일에는 첫 글자로 구분되는 두 가지 어휘가 공존한다.
 
-- **점으로 시작하는 키**(`.ref`, `.vars`, `.defaults`, `.content`, `.token`)는 **빌드 언어**이다. 컴파일러가 컴파일 시 모두 해석하므로 출력에는 하나도 남지 않는다. 점으로 시작하는 *문자열*(`.slotname`)도 빌드 언어이지만 컴포넌트의 `.content` 내부에서만 그러하며, 다른 곳에서는 일반 문자열이다.
+- **점으로 시작하는 키**(`.ref`, `.vars`, `.defaults`, `.content`, `.token`)는 **빌드 언어**이다. 컴파일러가 컴파일 시 모두 해석하므로 출력에는 하나도 남지 않는다. 점으로 시작하는 *문자열*(`.slotname`)도 빌드 언어이지만 컴포넌트의 `.content` 내부에서만 그러하며, 다른 곳에서는 일반 문자열이다. 문자열 값 어디에나 올 수 있는 토큰 시길 `@{...}` 역시 빌드 언어이다.
 - **밑줄로 시작하는 키와 `${...}` 문자열**(`_type`, `_children`, `_scope`, `${item.title}` 등)은 **런타임 언어**이다. 컴파일러는 이를 그대로 통과시킨다. 그 의미는 JSON을 렌더링하는 클라이언트 엔진이 정한다. Flutter 엔진은 [스타터 키트](https://github.com/David-Lee-dev/sdui-flutter-starter-kit)를 참조한다.
 
 이 가이드는 빌드 언어를 설명한다. 예제의 런타임 키는 현실적인 페이로드를 보여 주기 위해서만 등장한다.
@@ -70,7 +70,7 @@ params: [id]          # optional: route/query keys forwarded to the client as ro
 
 > **제자리 수정과 버전 올리기.** `screen.yaml`을 건드리지 않고 `template/1.0.0/**`을 수정할 수 있다. 버전 문자열이 바뀌지 않아도 출력 *콘텐츠 해시*(etag)는 바뀌므로 etag로 재검증하는 클라이언트는 업데이트를 받는다. 변경 사항이 구형 앱에 전달되면 안 되는 경우 템플릿 버전을 올린다.
 
-## 3. 디자인 토큰 — `.token`
+## 3. 디자인 토큰 — `.token` 과 `@{...}`
 
 토큰 그룹은 `_tokens/` 아래의 YAML 맵이다.
 
@@ -95,6 +95,39 @@ background: { .token: color.surface.card }
 - `.token` 노드에는 **형제 키가 없어야 한다**. 노드 자체가 값이다.
 - 조회한 값은 노드를 **그대로** 대체한다. 문자열, 숫자, 맵 등 토큰 파일이 담은 모든 값이 가능하다. 빌드 키가 있는지 다시 탐색하지 않는다. 토큰 파일에는 일반 값만 담으며 `.ref`나 추가 `.token`을 담지 않는다.
 - 알 수 없는 그룹, 알 수 없는 경로, 맵이 아닌 값 내부로의 순회는 모두 문제가 된 경로를 메시지에 포함하며 빌드를 실패시킨다.
+
+### 인라인 형태 — `@{group.path}`
+
+`.token`은 노드를 통째로 대체하므로 문자열 안으로는 들어갈 수 없다. 시길 `@{...}`은 같은 조회를 문자열 값이 오는 곳이면 어디서나 수행한다.
+
+```yaml
+color: '@{color.primary}'            # { .token: color.primary } 과 동일
+padding: '@{spacing.lg}'
+```
+
+문자열에 시길 하나만 있으면 **토큰의 타입이 보존된다**. `'@{spacing.lg}'`는 `"16"`이 아니라 숫자 `16`으로 컴파일된다. 다른 글자와 섞이면 **보간**되고 결과는 문자열이다.
+
+```yaml
+label: 'pad:@{spacing.lg}'           # -> "pad:16"
+```
+
+컴파일러가 시길을 소비하므로 런타임 `${...}` 표현식 **안에** 넣을 수 있다. `.token`으로는 불가능한 유일한 지점이다.
+
+```yaml
+text_color: '${is_urgent ? "@{color.badge}" : "@{color.text_secondary}"}'
+width: '${@{spacing.lg} * 2}'
+```
+
+두 델리미터를 두 단계로 생각하면 된다. `@{}`는 컴파일러가 해석해 출력에서 사라지고, `${}`는 JSON에 남아 클라이언트가 런타임에 평가한다.
+
+규칙은 다음과 같다.
+
+- **문자열 값만** 탐색한다. 맵의 키와 빌드 키의 인자(`.ref` 경로, `.token` 값)는 건드리지 않는다.
+- `@@{`는 리터럴 `@{`로 이스케이프된다.
+- 맵이나 배열을 보간하면 빌드가 실패한다(`Cannot interpolate non-scalar token`). 텍스트로 옮길 합리적인 형태가 없기 때문이다. 시길 하나만 있는 경우에는 값이 노드를 통째로 대체하므로 문제가 없다.
+- 짝이 없는 `@{`는 빌드를 실패시킨다(`Unterminated token sigil`). 오타를 리터럴 텍스트로 클라이언트에 내보내지 않기 위함이다.
+- **값 자체에** `@{`를 담은 토큰은 거부된다. 그렇지 않으면 같은 토큰이 컴포넌트 인자 하위 트리(두 번 순회된다)에 놓였는지에 따라 다르게 해석된다.
+- 두 형태는 동등하며 자유롭게 섞어 쓸 수 있다. `.token`은 폐기되지 않았다.
 
 ## 4. 컴포넌트와 프래그먼트 — `.ref`
 
@@ -210,6 +243,9 @@ _scope:
 | `does not accept args` | 프래그먼트(`.vars` 없음)에 전달한 인자 |
 | `Unresolved .ref` | 파일로 해석되지 않는 `.ref` 경로 |
 | `must not have sibling keys` | 형제 키가 있는 `.token` 노드 |
+| `Cannot interpolate non-scalar token` | 맵·배열 토큰을 `@{...}`로 텍스트에 섞은 경우 |
+| `Unterminated token sigil` | 문자열에 짝 없는 `@{` |
+| `Token value must not contain @{` | 값에 시길이 들어 있는 토큰 파일 |
 | `Unsupported build key` | 빌드 언어에 없는 점으로 시작하는 키 |
 | `Screen id must not be purely numeric` | `screen.yaml`의 숫자로만 된 `id` |
 | `Template version must not be purely numeric` | 숫자로만 된 템플릿 버전 |

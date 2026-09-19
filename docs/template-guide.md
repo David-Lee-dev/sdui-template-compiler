@@ -18,7 +18,8 @@ Two vocabularies coexist in a template file, split by their first character:
   `.token`) are **build language**. The compiler resolves them all at
   compile time; none survive into the output. Dot-prefixed *strings*
   (`.slotname`) are build language too, but only inside a component's
-  `.content` — anywhere else they are ordinary strings.
+  `.content` — anywhere else they are ordinary strings. So is the `@{...}`
+  token sigil, which may appear inside any string value.
 - **Underscore-prefixed keys and `${...}` strings** (`_type`, `_children`,
   `_scope`, `${item.title}`, …) are **runtime language**. The compiler
   passes them through untouched — they mean whatever the client engine that
@@ -108,7 +109,7 @@ compiling and receiving the old tree.
 > revalidating by etag still see the update. Bump the template version when
 > the change must not reach older apps.
 
-## 3. Design tokens — `.token`
+## 3. Design tokens — `.token` and `@{...}`
 
 Token groups are YAML maps under `_tokens/`:
 
@@ -136,6 +137,51 @@ Rules:
   keys: token files hold plain values, not `.ref`s or further `.token`s.
 - Unknown groups, unknown paths, and traversing into a non-map all fail the
   build with the offending path in the message.
+
+### The inline form — `@{group.path}`
+
+`.token` replaces a whole node, so it cannot reach inside a string. The sigil
+`@{...}` does the same lookup anywhere a string value appears:
+
+```yaml
+color: '@{color.primary}'            # same as { .token: color.primary }
+padding: '@{spacing.lg}'
+```
+
+Alone in a string, it **keeps the token's type** — `'@{spacing.lg}'` composes to
+the number `16`, not `"16"`. Mixed with other text it **interpolates**, and the
+result is a string:
+
+```yaml
+label: 'pad:@{spacing.lg}'           # -> "pad:16"
+```
+
+Because the compiler consumes the sigil, it can sit inside a runtime `${...}`
+expression — which is the one thing `.token` cannot do:
+
+```yaml
+text_color: '${is_urgent ? "@{color.badge}" : "@{color.text_secondary}"}'
+width: '${@{spacing.lg} * 2}'
+```
+
+Think of the two delimiters as two phases: `@{}` is resolved by the compiler and
+is gone from the output; `${}` survives into the JSON and is evaluated by the
+client at runtime.
+
+Rules:
+
+- Only **string values** are scanned. Map keys and build-key arguments (a `.ref`
+  path, a `.token` value) are left alone.
+- `@@{` escapes a literal `@{`.
+- Interpolating a map or array fails the build
+  (`Cannot interpolate non-scalar token`) — there is no sensible text for it.
+  Alone in a string it is fine, since the value replaces the node wholesale.
+- An unpaired `@{` fails the build (`Unterminated token sigil`) rather than
+  shipping a typo to the client as literal text.
+- A token whose own **value** contains `@{` is rejected. Otherwise the same
+  token would resolve differently depending on whether it landed in a component
+  argument subtree (which gets walked twice).
+- Both forms are equivalent and may be mixed freely; `.token` is not deprecated.
 
 ## 4. Components and fragments — `.ref`
 
@@ -283,6 +329,9 @@ port's own). The authoritative list is the `errors` map in
 | `does not accept args` | args passed to a fragment (no `.vars`) |
 | `Unresolved .ref` | a `.ref` path that resolves to no file |
 | `must not have sibling keys` | a `.token` node with siblings |
+| `Cannot interpolate non-scalar token` | `@{...}` for a map/array mixed into text |
+| `Unterminated token sigil` | an unpaired `@{` in a string |
+| `Token value must not contain @{` | a token file whose value carries the sigil |
 | `Unsupported build key` | a dot-key that isn't in the build language |
 | `Screen id must not be purely numeric` | an all-digit `id` in `screen.yaml` |
 | `Template version must not be purely numeric` | an all-digit template version |

@@ -1,0 +1,3 @@
+id: inline
+versions:
+  '1.0.0': { template: '1.0.0' }

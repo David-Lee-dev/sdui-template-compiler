@@ -1,0 +1,1 @@
+{"_type":"column","background_color":"#FF572A","gap":16,"ratio":1.5,"dense":false,"nested":"#138A68","label":"pad:16","expression":"${is_urgent ? \"#FF572A\" : \"#4B4F58\"}","arithmetic":"${16 * 2}","escaped":"@{not.a.token}","legacy":"#FF572A","_children":[{"_type":"chip","label":"#4B4F58","color":"#FF572A","padding":16}]}

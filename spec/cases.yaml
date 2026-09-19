@@ -17,6 +17,7 @@ golden:
   - composition
   - numbers
   - ordering # non-BMP directory names: code-point order, not UTF-16 order
+  - sigil # inline @{group.path} tokens: type-preserving, interpolating, escaped
 
 versioning:
   fixture: versioning
@@ -43,3 +44,6 @@ errors:
   build-key: 'Unsupported build key'
   numeric-id: 'Screen id must not be purely numeric'
   numeric-template: 'Template version must not be purely numeric'
+  sigil-nonscalar: 'Cannot interpolate non-scalar token'
+  sigil-unterminated: 'Unterminated token sigil'
+  sigil-token-value: 'Token value must not contain'

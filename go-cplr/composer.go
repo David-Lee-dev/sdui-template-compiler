@@ -21,6 +21,10 @@ var missingSlot = missingSentinel{}
 
 var tokenGroupPattern = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
 
+// tokenSigilPattern matches `@{group.path}` — the inline form of `.token` —
+// and `@@{`, its escape. Shared shape with the other ports.
+var tokenSigilPattern = regexp.MustCompile(`@@\{|@\{([^{}]*)\}`)
+
 // componentFile is a parsed component declaration (.vars/.defaults/.content).
 type componentFile struct {
 	vars     []string
@@ -63,6 +67,9 @@ func expandNode(node Value, context expansionContext) Value {
 	if arr, ok := node.([]Value); ok {
 		return expandArray(arr, context)
 	}
+	if s, ok := node.(string); ok {
+		return expandString(s, context)
+	}
 	obj, ok := node.(*Object)
 	if !ok {
 		return node
@@ -100,6 +107,14 @@ func expandToken(node *Object, context expansionContext) Value {
 		fail(".token value must be a non-empty dotted string")
 	}
 
+	return resolveToken(tokenPath, context)
+}
+
+// resolveToken resolves a dotted token path against its group file.
+//
+// Shared by `{ .token: ... }` and the inline `@{...}` sigil so both forms
+// validate identically and fail with the same diagnostics.
+func resolveToken(tokenPath string, context expansionContext) Value {
 	segments := strings.Split(tokenPath, ".")
 	valid := len(segments) >= 2 && tokenGroupPattern.MatchString(segments[0])
 	for _, segment := range segments {
@@ -128,7 +143,66 @@ func expandToken(node *Object, context expansionContext) Value {
 		traversedPath = traversedPath + "." + key
 	}
 
+	// A token value that carries the sigil would be rescanned when it lands in
+	// a component argument subtree, making resolution depend on where it was
+	// used. Reject it at the source instead.
+	if s, ok := value.(string); ok && strings.Contains(s, "@{") {
+		fail("Token value must not contain @{: %s", tokenPath)
+	}
+
 	return cloneValue(value)
+}
+
+// expandString substitutes `@{group.path}` token sigils inside a string value.
+//
+// A string that is exactly one sigil resolves to the token's own value and
+// keeps its type (`'@{spacing.lg}'` -> `16`). Any other occurrence is
+// interpolated as text, so tokens compose inside runtime expressions.
+func expandString(node string, context expansionContext) Value {
+	if !strings.Contains(node, "@") {
+		return node
+	}
+
+	if match := tokenSigilPattern.FindStringSubmatchIndex(node); match != nil &&
+		match[0] == 0 && match[1] == len(node) && match[2] >= 0 {
+		return resolveToken(node[match[2]:match[3]], context)
+	}
+
+	assertNoDanglingSigil(node)
+
+	var sb strings.Builder
+	last := 0
+	for _, match := range tokenSigilPattern.FindAllStringSubmatchIndex(node, -1) {
+		sb.WriteString(node[last:match[0]])
+		last = match[1]
+
+		if match[2] < 0 {
+			sb.WriteString("@{")
+			continue
+		}
+
+		path := node[match[2]:match[3]]
+		value := resolveToken(path, context)
+		switch t := value.(type) {
+		case string:
+			sb.WriteString(t)
+		case []Value, *Object:
+			fail("Cannot interpolate non-scalar token %s into a string", path)
+		default:
+			sb.WriteString(CompactJSON(value))
+		}
+	}
+	sb.WriteString(node[last:])
+	return sb.String()
+}
+
+// assertNoDanglingSigil rejects an unterminated `@{` left behind by
+// substitution. A typo like `@{color.primary` would otherwise ship to the
+// client as literal text; failing the build is the loud alternative.
+func assertNoDanglingSigil(original string) {
+	if strings.Contains(tokenSigilPattern.ReplaceAllString(original, ""), "@{") {
+		fail("Unterminated token sigil @{ in: %s", original)
+	}
 }
 
 func expandArray(nodes []Value, context expansionContext) []Value {

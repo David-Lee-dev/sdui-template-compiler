@@ -15,6 +15,14 @@ const CONTENT_KEY = '.content';
 const TOKEN_KEY = '.token';
 const MISSING = Symbol('missing component variable');
 
+const GROUP_NAME = /^[A-Za-z0-9_-]+$/;
+
+// `@{group.path}` — the inline form of `.token`, usable anywhere a string is.
+// `@@{` escapes a literal `@{`. Both are consumed at compile time, so the sigil
+// is invisible to the client and composes inside runtime `${...}` expressions.
+const TOKEN_SIGIL = /@@\{|@\{([^{}]*)\}/g;
+const WHOLE_TOKEN_SIGIL = /^(?:@@\{|@\{([^{}]*)\})$/;
+
 interface ExpansionContext {
   activePaths: readonly string[];
   componentStack: readonly string[];
@@ -115,6 +123,7 @@ export class Composer {
     context: ExpansionContext,
   ): JsonValue {
     if (Array.isArray(node)) return Composer.expandArray(node, context);
+    if (typeof node === 'string') return Composer.expandString(node, context);
     if (!Composer.isObject(node)) return node;
 
     if (Object.hasOwn(node, 'screen_id')) {
@@ -150,13 +159,31 @@ export class Composer {
       throw new Error('.token value must be a non-empty dotted string');
     }
 
+    return Composer.resolveToken(tokenPath, context);
+  }
+
+  /**
+   * Resolves a dotted token path against its group file.
+   *
+   * Shared by `{ .token: ... }` and the inline `@{...}` sigil so both forms
+   * validate identically and fail with the same diagnostics.
+   *
+   * @param tokenPath - Dotted path, `<group>.<key...>`
+   * @param context - Expansion context carrying the token resolver
+   * @returns Deep copy of the token value
+   * @throws When the path is malformed, the group is unknown, or a key is missing
+   */
+  private static resolveToken(
+    tokenPath: string,
+    context: ExpansionContext,
+  ): JsonValue {
     const segments = tokenPath.split('.');
     if (
       segments.length < 2 ||
       segments.some(
         (segment) => segment.length === 0 || segment.trim() !== segment,
       ) ||
-      !/^[A-Za-z0-9_-]+$/.test(segments[0])
+      !GROUP_NAME.test(segments[0])
     ) {
       throw new Error('.token value must be a non-empty dotted string');
     }
@@ -181,7 +208,63 @@ export class Composer {
       traversedPath = `${traversedPath}.${key}`;
     }
 
+    // A token value that carries the sigil would be rescanned when it lands in
+    // a component argument subtree, making resolution depend on where it was
+    // used. Reject it at the source instead.
+    if (typeof value === 'string' && value.includes('@{')) {
+      throw new Error(`Token value must not contain @{: ${tokenPath}`);
+    }
+
     return Composer.clone(value);
+  }
+
+  /**
+   * Substitutes `@{group.path}` token sigils inside a string value.
+   *
+   * A string that is exactly one sigil resolves to the token's own value and
+   * keeps its type (`'@{spacing.lg}'` -> `16`). Any other occurrence is
+   * interpolated as text, so tokens compose inside runtime expressions.
+   *
+   * @param node - Raw string value from the template
+   * @param context - Expansion context carrying the token resolver
+   * @returns The token value, the interpolated string, or the string unchanged
+   * @throws When a sigil is unterminated or interpolates a non-scalar token
+   */
+  private static expandString(
+    node: string,
+    context: ExpansionContext,
+  ): JsonValue {
+    if (!node.includes('@')) return node;
+
+    const whole = WHOLE_TOKEN_SIGIL.exec(node);
+    if (whole !== null && whole[1] !== undefined) {
+      return Composer.resolveToken(whole[1], context);
+    }
+
+    Composer.assertNoDanglingSigil(node);
+    return node.replace(TOKEN_SIGIL, (_match, path?: string) => {
+      if (path === undefined) return '@{';
+
+      const value = Composer.resolveToken(path, context);
+      if (Composer.isObject(value) || Array.isArray(value)) {
+        throw new Error(
+          `Cannot interpolate non-scalar token ${path} into a string`,
+        );
+      }
+      return typeof value === 'string' ? value : JSON.stringify(value);
+    });
+  }
+
+  /**
+   * Rejects an unterminated `@{` left behind by substitution.
+   *
+   * A typo like `@{color.primary` would otherwise ship to the client as
+   * literal text; failing the build is the loud alternative.
+   */
+  private static assertNoDanglingSigil(original: string): void {
+    if (original.replace(TOKEN_SIGIL, '').includes('@{')) {
+      throw new Error(`Unterminated token sigil @{ in: ${original}`);
+    }
   }
 
   private static expandArray(

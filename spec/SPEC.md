@@ -9,7 +9,7 @@ through representative vectors; this document is what a port implements.
 
 ```
 <root>/
-  _tokens/<group>.yaml          # design-token maps, referenced as { .token: <group>.<path> }
+  _tokens/<group>.yaml          # design-token maps, referenced as { .token: <g>.<path> } or @{<g>.<path>}
   _components/<name>.yaml       # shared components/fragments, referenced as { .ref: /<name> }
   screens/<dir>/
     screen.yaml                 # manifest: id, versions, params
@@ -60,6 +60,19 @@ and manifest key order follow it.
   sibling keys; the value is a dotted string of at least two segments; traversal
   errors identify the failing path. Token group files must be maps; groups are
   cached per build.
+- `@{group.path.to.value}` — the same lookup, inline in any **string value**
+  (map keys and build-key arguments are not scanned). A string that is exactly
+  one sigil resolves to the token value and **keeps its type**
+  (`'@{spacing.lg}'` → `16`); any other occurrence is **interpolated as text**,
+  each token rendered with its JSON scalar form (`16`, `1.5`, `true`, `null`),
+  producing a string. Because substitution happens at compile time, a sigil may
+  sit inside a runtime `${...}` expression — the client never sees either sigil.
+  `@@{` escapes a literal `@{`. Interpolating a map or array throws
+  `Cannot interpolate non-scalar token`; an unpaired `@{` throws
+  `Unterminated token sigil`; a **token value** that itself contains `@{` throws
+  `Token value must not contain @{` (it would otherwise be rescanned when the
+  value lands in a component-argument subtree, making the result depend on where
+  the token was used).
 - Any other `.`-prefixed key throws `Unsupported build key .x`.
 - `screen_id` is rejected inside template nodes.
 - When a `.ref` in an array expands to an array, it is spliced (flattened one level).

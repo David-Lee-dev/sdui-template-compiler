@@ -1,0 +1,5 @@
+lg: 16
+ratio: 1.5
+dense: false
+group:
+  inner: 8

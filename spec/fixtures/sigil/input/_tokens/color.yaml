@@ -1,0 +1,4 @@
+primary: '#FF572A'
+text_secondary: '#4B4F58'
+nested:
+  accent: '#138A68'
