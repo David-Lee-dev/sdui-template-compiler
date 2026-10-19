@@ -14,11 +14,22 @@ cd js-cplr
 pnpm install && pnpm build        # emits dist/
 ```
 
+From the private registry (tailnet), add to the consumer's `.npmrc`:
+
+```
+@oddquestlabs:registry=http://100.115.77.18:28400/api/packages/david/npm/
+//100.115.77.18:28400/api/packages/david/npm/:_authToken=anonymous
+```
+
+```sh
+pnpm add @oddquestlabs/sdui-template-compiler
+```
+
 From another project:
 
 ```jsonc
 // package.json
-{ "dependencies": { "sdui-template-compiler": "file:../sdui-template-compiler/js-cplr" } }
+{ "dependencies": { "@oddquestlabs/sdui-template-compiler": "file:../sdui-template-compiler/js-cplr" } }
 ```
 
 ## CLI
@@ -35,7 +46,7 @@ compact form.
 ## Library
 
 ```ts
-import { ScreenRegistry } from 'sdui-template-compiler';
+import { ScreenRegistry } from '@oddquestlabs/sdui-template-compiler';
 
 // Compiles every screen under the root eagerly — throws on any template error.
 const registry = ScreenRegistry.build('path/to/sdui-root');

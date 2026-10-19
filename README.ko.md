@@ -48,7 +48,7 @@ node dist/cli.js ../spec/fixtures/basic/input --out /tmp/sdui-out --pretty
 미리 컴파일하지 않고 프로세스 내에서 스크린을 해석할 수도 있다.
 
 ```ts
-import { ScreenRegistry } from 'sdui-template-compiler';
+import { ScreenRegistry } from '@oddquestlabs/sdui-template-compiler';
 
 const registry = ScreenRegistry.build('path/to/sdui-root');
 const composed = registry.resolve('home', '2.3.0'); // newest threshold ≤ 2.3.0
@@ -87,7 +87,7 @@ _children:
 
 | 포트 | 언어 | 라이브러리 | CLI |
 |---|---|---|---|
-| [`js-cplr/`](js-cplr) | TypeScript(레퍼런스) | `sdui-template-compiler` (ESM) | `sdui-compile` |
+| [`js-cplr/`](js-cplr) | TypeScript(레퍼런스) | `@oddquestlabs/sdui-template-compiler` (ESM) | `sdui-compile` |
 | [`py-cplr/`](py-cplr) | Python ≥ 3.11 | `sdui_template_compiler` | `sdui-compile` |
 | [`go-cplr/`](go-cplr) | Go ≥ 1.22 | `github.com/David-Lee-dev/sdui-template-compiler/go-cplr` | `go run ./cmd/sdui-compile` |
 

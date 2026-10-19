@@ -13,11 +13,22 @@ cd js-cplr
 pnpm install && pnpm build        # emits dist/
 ```
 
+개인 패키지 저장소(tailnet)에서 받으려면 사용하는 쪽 `.npmrc`에 다음을 둔다.
+
+```
+@oddquestlabs:registry=http://100.115.77.18:28400/api/packages/david/npm/
+//100.115.77.18:28400/api/packages/david/npm/:_authToken=anonymous
+```
+
+```sh
+pnpm add @oddquestlabs/sdui-template-compiler
+```
+
 다른 프로젝트에서 사용하는 방법은 다음과 같다.
 
 ```jsonc
 // package.json
-{ "dependencies": { "sdui-template-compiler": "file:../sdui-template-compiler/js-cplr" } }
+{ "dependencies": { "@oddquestlabs/sdui-template-compiler": "file:../sdui-template-compiler/js-cplr" } }
 ```
 
 ## CLI
@@ -32,7 +43,7 @@ node dist/cli.js <sdui-root> --out <dir> [--pretty]
 ## 라이브러리
 
 ```ts
-import { ScreenRegistry } from 'sdui-template-compiler';
+import { ScreenRegistry } from '@oddquestlabs/sdui-template-compiler';
 
 // Compiles every screen under the root eagerly — throws on any template error.
 const registry = ScreenRegistry.build('path/to/sdui-root');

@@ -1,5 +1,5 @@
 {
-  "name": "sdui-template-compiler",
+  "name": "@oddquestlabs/sdui-template-compiler",
   "version": "0.1.0",
   "description": "Compiles SDUI YAML screen templates (components, tokens, versioning) into client-ready JSON",
   "type": "module",
@@ -34,5 +34,8 @@
     "@types/node": "^24.0.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
+  },
+  "publishConfig": {
+    "registry": "http://100.115.77.18:28400/api/packages/david/npm/"
   }
 }

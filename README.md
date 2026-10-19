@@ -65,7 +65,7 @@ You get one JSON file per screen per template version, plus the manifest:
 Or resolve screens in-process instead of precompiling:
 
 ```ts
-import { ScreenRegistry } from 'sdui-template-compiler';
+import { ScreenRegistry } from '@oddquestlabs/sdui-template-compiler';
 
 const registry = ScreenRegistry.build('path/to/sdui-root');
 const composed = registry.resolve('home', '2.3.0'); // newest threshold ≤ 2.3.0
@@ -111,7 +111,7 @@ client engine renders the JSON. Full authoring guide:
 
 | Port | Language | Library | CLI |
 |---|---|---|---|
-| [`js-cplr/`](js-cplr) | TypeScript (reference) | `sdui-template-compiler` (ESM) | `sdui-compile` |
+| [`js-cplr/`](js-cplr) | TypeScript (reference) | `@oddquestlabs/sdui-template-compiler` (ESM) | `sdui-compile` |
 | [`py-cplr/`](py-cplr) | Python ≥ 3.11 | `sdui_template_compiler` | `sdui-compile` |
 | [`go-cplr/`](go-cplr) | Go ≥ 1.22 | `github.com/David-Lee-dev/sdui-template-compiler/go-cplr` | `go run ./cmd/sdui-compile` |
 
